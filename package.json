@@ -3,6 +3,9 @@
   "version": "0.3.3",
   "description": "Automatically solve hCaptcha using AI.",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "watch": "webpack --mode=development --watch --env browser=chrome --config config/webpack.config.js",
     "watch:firefox": "webpack --mode=development --watch --env browser=firefox --config config/webpack.config.js",
