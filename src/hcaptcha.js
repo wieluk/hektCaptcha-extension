@@ -13,12 +13,7 @@
 
 import 'jimp';
 import { Time } from './utils';
-import {
-  cosineSimilarity,
-  softmax,
-  scaleBoxes,
-  preprocessImageData,
-} from './helpers';
+import { softmax, scaleBoxes, preprocessImageData } from './helpers';
 const ort = require('onnxruntime-web');
 
 // Modify ort wasm path

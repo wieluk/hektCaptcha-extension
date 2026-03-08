@@ -75,7 +75,11 @@ describe('softmax()', () => {
     expect(sum).toBeCloseTo(1, 5);
   });
 
-  it('is invariant to a constant offset (numerical stability)', () => {
+  it('handles empty input', () => {
+    expect(softmax([])).toEqual([]);
+  });
+
+  it('is numerically stable with large logits (constant offset invariance)', () => {
     const base = [1, 2, 3];
     const shifted = [101, 102, 103];
     const r1 = softmax(base);
@@ -98,19 +102,20 @@ describe('scaleBoxes()', () => {
     const result = scaleBoxes([20, 30, 40, 60], [50, 50], [100, 100]);
     expect(result[0]).toBeCloseTo(10, 5); // (20 - 0) / 2
     expect(result[1]).toBeCloseTo(15, 5); // (30 - 0) / 2
-    expect(result[2]).toBeCloseTo(20, 5); // (40 - 0) / 2
-    expect(result[3]).toBeCloseTo(30, 5); // (60 - 0) / 2
+    expect(result[2]).toBeCloseTo(20, 5); // 40 / 2 (width scaled by gain only)
+    expect(result[3]).toBeCloseTo(30, 5); // 60 / 2 (height scaled by gain only)
   });
 
-  it('accounts for letterbox padding correctly', () => {
+  it('accounts for letterbox padding correctly with [x, y, w, h] semantics', () => {
     // imageDims=[200,100], scaledDims=[100,100]
     // gain = min(100/200, 100/100) = 0.5
     // wPad = (100 - 0.5*200)/2 = 0, hPad = (100 - 0.5*100)/2 = 25
+    // x and y account for padding and gain; w and h are only scaled by gain.
     const result = scaleBoxes([50, 50, 150, 75], [200, 100], [100, 100]);
     expect(result[0]).toBeCloseTo(100, 5); // (50 - 0) / 0.5
     expect(result[1]).toBeCloseTo(50, 5); // (50 - 25) / 0.5
-    expect(result[2]).toBeCloseTo(300, 5); // (150 - 0) / 0.5
-    expect(result[3]).toBeCloseTo(100, 5); // (75 - 25) / 0.5
+    expect(result[2]).toBeCloseTo(300, 5); // 150 / 0.5 (width scaled by gain only)
+    expect(result[3]).toBeCloseTo(150, 5); // 75 / 0.5 (height scaled by gain only)
   });
 
   it('returns an empty array for empty input', () => {
@@ -147,6 +152,13 @@ describe('overflowBoxes()', () => {
   it('handles a box that starts at the canvas boundary', () => {
     const result = overflowBoxes([100, 100, 0, 0], 100);
     expect(result).toEqual([100, 100, 0, 0]);
+  });
+
+  it('does not mutate the input array', () => {
+    const original = [80, 10, 30, 20];
+    const copy = [...original];
+    overflowBoxes(original, 100);
+    expect(original).toEqual(copy);
   });
 });
 
@@ -208,5 +220,41 @@ describe('preprocessImageData()', () => {
   it('handles an empty buffer', () => {
     const result = preprocessImageData(new Uint8Array([]));
     expect(result).toHaveLength(0);
+  });
+
+  it('applies ImageNet normalisation correctly for multi-pixel input', () => {
+    // Three pixels with distinct colors to exercise all channel slices:
+    // P0 = (255,   0,   0)
+    // P1 = (  0, 255,   0)
+    // P2 = (  0,   0, 255)
+    const buf = new Uint8Array([
+      255, 0,   0,   255, // P0
+      0,   255, 0,   255, // P1
+      0,   0,   255, 255, // P2
+    ]);
+
+    const result = preprocessImageData(buf, true);
+    const numPixels = 3;
+
+    const imagenetMean = [0.485, 0.456, 0.406];
+    const imagenetStd = [0.229, 0.224, 0.225];
+
+    const reds   = [255, 0, 0];
+    const greens = [0, 255, 0];
+    const blues  = [0, 0, 255];
+
+    for (let i = 0; i < numPixels; i++) {
+      const rIndex = i;
+      const gIndex = numPixels + i;
+      const bIndex = 2 * numPixels + i;
+
+      const expectedR = (reds[i]   / 255 - imagenetMean[0]) / imagenetStd[0];
+      const expectedG = (greens[i] / 255 - imagenetMean[1]) / imagenetStd[1];
+      const expectedB = (blues[i]  / 255 - imagenetMean[2]) / imagenetStd[2];
+
+      expect(result[rIndex]).toBeCloseTo(expectedR, 3);
+      expect(result[gIndex]).toBeCloseTo(expectedG, 3);
+      expect(result[bIndex]).toBeCloseTo(expectedB, 3);
+    }
   });
 });

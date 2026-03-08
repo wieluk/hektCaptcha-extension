@@ -63,20 +63,20 @@ describe('Time.random_sleep()', () => {
 
   it('resolves after a duration within [min, max)', async () => {
     // Force Math.random() to return 0.5 so duration = floor(0.5*(max-min)+min)
-    jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
     const promise = Time.random_sleep(200, 400);
     // duration = floor(0.5 * (400-200) + 200) = floor(300) = 300
     jest.advanceTimersByTime(300);
     await expect(promise).resolves.toBeUndefined();
-    jest.spyOn(Math, 'random').mockRestore();
+    randomSpy.mockRestore();
   });
 
   it('always sleeps at least min ms when Math.random returns 0', async () => {
-    jest.spyOn(Math, 'random').mockReturnValue(0);
+    const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
     const promise = Time.random_sleep(100, 500);
     // duration = floor(0 * (500-100) + 100) = 100
     jest.advanceTimersByTime(100);
     await expect(promise).resolves.toBeUndefined();
-    jest.spyOn(Math, 'random').mockRestore();
+    randomSpy.mockRestore();
   });
 });
