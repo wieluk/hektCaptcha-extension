@@ -13,6 +13,7 @@
 
 import 'jimp';
 import { KVStorage, Time } from './utils.js';
+import { overflowBoxes, preprocessImageData } from './helpers';
 
 const ort = require('onnxruntime-web');
 
@@ -29,33 +30,7 @@ ort.env.wasm.wasmPaths = {
 };
 
 function imageDataToTensor(image, dims, normalize = true) {
-  // 1. Get buffer data from image and extract R, G, and B arrays.
-  var imageBufferData = image.bitmap.data;
-  const [redArray, greenArray, blueArray] = [[], [], []];
-
-  // 2. Loop through the image buffer and extract the R, G, and B channels
-  for (let i = 0; i < imageBufferData.length; i += 4) {
-    redArray.push(imageBufferData[i]);
-    greenArray.push(imageBufferData[i + 1]);
-    blueArray.push(imageBufferData[i + 2]);
-  }
-
-  // 3. Concatenate RGB to transpose [224, 224, 3] -> [3, 224, 224] to a number array
-  const transposedData = redArray.concat(greenArray, blueArray);
-
-  // 4. Convert to float32 and normalize to 1
-  const float32Data = new Float32Array(transposedData.map((x) => x / 255.0));
-
-  // 5. Normalize the data mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-  if (normalize) {
-    const mean = [0.485, 0.456, 0.406];
-    const std = [0.229, 0.224, 0.225];
-    for (let i = 0; i < float32Data.length; i++) {
-      float32Data[i] = (float32Data[i] - mean[i % 3]) / std[i % 3];
-    }
-  }
-
-  // 6. Create a tensor from the float32 data
+  const float32Data = preprocessImageData(image.bitmap.data, normalize);
   const inputTensor = new ort.Tensor('float32', float32Data, dims);
   return inputTensor;
 }
@@ -113,14 +88,6 @@ async function simulateMouseClick(element) {
     await Time.random_sleep(0, 10);
   }
 }
-
-const overflowBoxes = (box, maxSize) => {
-  box[0] = box[0] >= 0 ? box[0] : 0;
-  box[1] = box[1] >= 0 ? box[1] : 0;
-  box[2] = box[0] + box[2] <= maxSize ? box[2] : maxSize - box[0];
-  box[3] = box[1] + box[3] <= maxSize ? box[3] : maxSize - box[1];
-  return box;
-};
 
 (async () => {
   function is_widget_frame() {

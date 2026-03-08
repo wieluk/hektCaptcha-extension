@@ -13,6 +13,7 @@
 
 import 'jimp';
 import { Time } from './utils';
+import { softmax, scaleBoxes, preprocessImageData } from './helpers';
 const ort = require('onnxruntime-web');
 
 // Modify ort wasm path
@@ -41,59 +42,10 @@ async function letterboxImage(image, size) {
   return newImage;
 }
 
-function scaleBoxes(boxes, imageDims, scaledDims) {
-  const gain = Math.min(
-    scaledDims[0] / imageDims[0],
-    scaledDims[1] / imageDims[1]
-  );
-  const wPad = (scaledDims[0] - gain * imageDims[0]) / 2;
-  const hPad = (scaledDims[1] - gain * imageDims[1]) / 2;
-  return boxes.map((box, i) => (box - (i % 2 === 0 ? wPad : hPad)) / gain);
-}
-
 function imageDataToTensor(image, dims, normalize = true) {
-  // 1. Get buffer data from image and extract R, G, and B arrays.
-  var imageBufferData = image.bitmap.data;
-  const [redArray, greenArray, blueArray] = [[], [], []];
-
-  // 2. Loop through the image buffer and extract the R, G, and B channels
-  for (let i = 0; i < imageBufferData.length; i += 4) {
-    redArray.push(imageBufferData[i]);
-    greenArray.push(imageBufferData[i + 1]);
-    blueArray.push(imageBufferData[i + 2]);
-  }
-
-  // 3. Concatenate RGB to transpose [256, 256, 3] -> [3, 256, 256] to a number array
-  const transposedData = redArray.concat(greenArray, blueArray);
-
-  // 4. Convert to float32 and normalize to 1
-  const float32Data = new Float32Array(transposedData.map((x) => x / 255.0));
-
-  // 5. Normalize the data mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-  if (normalize) {
-    const mean = [0.485, 0.456, 0.406];
-    const std = [0.229, 0.224, 0.225];
-    for (let i = 0; i < float32Data.length; i++) {
-      float32Data[i] = (float32Data[i] - mean[i % 3]) / std[i % 3];
-    }
-  }
-
-  // 6. Create a tensor from the float32 data
+  const float32Data = preprocessImageData(image.bitmap.data, normalize);
   const inputTensor = new ort.Tensor('float32', float32Data, dims);
   return inputTensor;
-}
-
-function cosineSimilarity(a, b) {
-  const dotProduct = a.reduce((acc, val, i) => acc + val * b[i], 0);
-  const magnitudeA = Math.sqrt(a.reduce((acc, val) => acc + val * val, 0));
-  const magnitudeB = Math.sqrt(b.reduce((acc, val) => acc + val * val, 0));
-  return dotProduct / (magnitudeA * magnitudeB);
-}
-
-function softmax(x) {
-  const e_x = x.map((v) => Math.exp(v));
-  const sum_e_x = e_x.reduce((a, b) => a + b, 0);
-  return e_x.map((v) => v / sum_e_x);
 }
 
 async function classifyImage(featSession, classifierSession, url) {
