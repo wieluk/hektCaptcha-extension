@@ -23,7 +23,6 @@ chrome.runtime.onInstalled.addListener(async () => {
   // Apply default settings if not set
   for (const [key, value] of Object.entries(defaultSettings)) {
     const storedValue = await chrome.storage.local.get(key);
-    console.log(storedValue);
     if (storedValue[key] === undefined) {
       await chrome.storage.local.set({ [key]: value });
     }

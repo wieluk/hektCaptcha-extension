@@ -392,12 +392,15 @@ function simulateMouseClick(element, clientX = null, clientY = null) {
   }
 
   async function on_image_frame(settings) {
-    if (
-      document.querySelector('.display-language .text').textContent !== 'EN'
-    ) {
-      simulateMouseClick(
-        document.querySelector('.language-selector .option:nth-child(23)')
+    const langDisplay = document.querySelector('.display-language .text');
+    if (langDisplay && langDisplay.textContent !== 'EN') {
+      const options = document.querySelectorAll('.language-selector .option');
+      const enOption = Array.from(options).find(
+        (opt) => opt.textContent.trim() === 'EN'
       );
+      if (enOption) {
+        simulateMouseClick(enOption);
+      }
       await Time.sleep(500);
     }
 
@@ -417,6 +420,9 @@ function simulateMouseClick(element, clientX = null, clientY = null) {
         .replace('Please click on all images of', '')
         .replace('Please click on the', '')
         .replace('Select all images containing', '')
+        .replace('Click each image containing', '')
+        .replace('Please select all images containing', '')
+        .replace('Please click each image that contains', '')
         .replace('Select all', '')
         .trim()
         .replace(/^(a|an)\s+/i, '')
@@ -516,7 +522,7 @@ function simulateMouseClick(element, clientX = null, clientY = null) {
       // Get label for image
       const label = task
         .replace('Please click on the thumbnail that is', '')
-        .replace('Please click the center of the')
+        .replace('Please click the center of the', '')
         .replace('Please click on the', '')
         .replace('Please click the', '')
         .trim()
@@ -632,6 +638,9 @@ function simulateMouseClick(element, clientX = null, clientY = null) {
         .replace('Please click on all images of', '')
         .replace('Please click on the', '')
         .replace('Select all images containing', '')
+        .replace('Click each image containing', '')
+        .replace('Please select all images containing', '')
+        .replace('Please click each image that contains', '')
         .replace('Select all', '')
         .trim()
         .replace(/^(a|an)\s+/i, '')

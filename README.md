@@ -1,7 +1,3 @@
-## STATUS: Archived
-
-Update is stopped until further notice, please use other service.
-
 # <img src="public/icons/icon_48.png" width="45" align="left"> hektCaptcha Extension
 
 Automatically solve hCaptcha using AI. Locally, with Chrome extension.
@@ -32,7 +28,7 @@ Download from [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/h
 
 ## How to Build
 
-To build the extension, make sure you have Node.js installed. Then run:
+To build the extension, make sure you have **Node.js >= 20.9.0** installed. Then run:
 
 ```bash
 npm install
