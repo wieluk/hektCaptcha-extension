@@ -1,6 +1,6 @@
 {
   "name": "hektcaptcha-extension",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Automatically solve hCaptcha using AI.",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
     "format": "prettier --write --ignore-unknown \"{config,public,src}/**/*.{html,css,js,ts,json}\""
   },
   "devDependencies": {
-    "copy-webpack-plugin": "^10.2.4",
+    "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^6.7.3",
     "file-loader": "^6.2.0",
     "mini-css-extract-plugin": "^2.7.2",
